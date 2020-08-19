@@ -1,3 +1,9 @@
+ARTIQ Controller
+================
+
 .. argparse::
-   :ref: thorlabs_tcube.aqctl_thorlabs_tcube.get_argparser
-   :prog: aqctl_thorlabs_tcube
+   :ref: AGUC8.aqctl_AGUC8.get_argparser
+   :prog: AGUC8
+
+Usage Example
+-------------
