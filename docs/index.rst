@@ -6,11 +6,14 @@
 Welcome to AGUC8's documentation!
 =================================
 
+Contents
+--------
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
-
-
+   
+   readme
+   api
 
 Indices and tables
 ==================
