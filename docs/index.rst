@@ -14,6 +14,7 @@ Contents
    
    readme
    api
+   artiq_controller
 
 Indices and tables
 ==================
