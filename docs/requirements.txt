@@ -1,1 +1,3 @@
 sphinx-argparse
+pyserial
+git+https://github.com/m-labs/sipyco
