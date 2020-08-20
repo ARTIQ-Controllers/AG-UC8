@@ -37,13 +37,13 @@ First, run the AGUC8 controller::
 
 Then, send commands via the ``artiq_rpctool`` utility::
 
-    $ artiq_rpctool ::1 3251 list-targets
+    $ sipyco_rpctool ::1 3251 list-targets
     Target(s):   AGUC8
-    $ artiq_rpctool ::1 3251 call move(15,15) # will move 15 steps in the positive direction along each axis
-    $ artiq_rpctool ::1 3251 call move(-15,-15) # will move 15 steps in the negative direction along each axis
-    $ artiq_rpctool ::1 3251 call moveUpUp() # will move to the upper limit of each axis, if device has a limit switch
-    $ artiq_rpctool ::1 3251 call goToZero # will go to zero position
-    $ artiq_rpctool ::1 3251 call close # close the device
+    $ sipyco_rpctool ::1 3251 call move(15,15) # will move 15 steps in the positive direction along each axis
+    $ sipyco_rpctool ::1 3251 call move(-15,-15) # will move 15 steps in the negative direction along each axis
+    $ sipyco_rpctool ::1 3251 call moveUpUp() # will move to the upper limit of each axis, if device has a limit switch
+    $ sipyco_rpctool ::1 3251 call goToZero # will go to zero position
+    $ sipyco_rpctool ::1 3251 call close # close the device
 
 API
 ---
