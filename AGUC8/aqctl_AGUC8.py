@@ -11,13 +11,19 @@ from AGUC8 import driver
 logger = logging.getLogger(__name__)
 
 class Motor():
-    """Class for providing functionality of piezo mount remotely.
+    """Class for providing remote functionality of AGUC8 controller.
 
-    A Motor instance can be initialised using the desired port.
+    A Motor instance can be initialized using the desired port.
     If no serial number is specified, it connects to the port specified by the "self.port" variable.
+
+    :param port: <host>:<port> (See pySerial's serial_for_url documentation. Uses the socket:// URL.).
+    Defaults to None if not specified. In that case, it will use self.port.
+    :port type: str, optional
     """
 
     def __init__(self, port=None):
+        """Constructor method
+        """
         if port is None:
             self.port = "192.168.1.220:10001"
         else:
@@ -28,66 +34,58 @@ class Motor():
         self.drv = driver.AGUC8(self.port)
 
     def move(self, d1, d2):
-        """
-        Moves to the relative location specified by coordinates (d1,d2).
+        """Moves to the relative location specified by coordinates (d1,d2).
         
-        :param int d1: Number of steps in the x-direction.
-        :param int d2: Number of steps in the y-direction.
+        :param d1: Axis 1 relative location
+        :d1 type: int
+        :param d2: Axis 2 relative location
+        :d2 type: int
         """
         self.drv.move(d1, d2)
 
     def moveUpUp(self):
-        """
-        Moves to the upper limit in both the x-direction and y-direction.
+        """Moves to Axis 1 maximum, Axis 2 maximum.
         """
         self.drv.moveUpUp()
 
     def moveDownDown(self):
-        """
-        Moves to the lower limit in both the x-direction and y-direction.
+        """Moves to Axis 1 minimum, Axis 2 minimum.
         """
         self.drv.moveDownDown()
 
     def moveDownUp(self):
-        """
-        Moves to the lower limit in the x-direction and the upper limit in the y-direction.
+        """Moves to Axis 1 minimum, Axis 2 maximum.
         """
         self.drv.moveDownUp()
 
     def moveUpDown(self):
-        """
-        Moves to the upper limit in the x-direction and the lower limit in the y-direction.
+        """Moves to Axis 1 maximum, Axis 2 minimum.
         """
         self.drv.moveUpDown()
 
     def goToZero(self):
-        """
-        Moves to the the "zero" point. If this point has not been specified since the device was powered on,
-        it will move to the initial point when powered on.
+        """Moves to the the zero position. If this point has not been specified, it moves to
+        the initial position of the device when powered on.
         """
         self.drv.goToZero()
 
     def setZero(self):
         """
-        Set the "zero" point.
+        Set the zero position to the current position.
         """
         self.drv.setZero()
 
-    def stop(self):
-        """
-        Stops any ongoing motion.
-        """
-        self.drv.stop()
-
     def followApath(self, path):
-        """
-        Sequentially moves to each relative location specified in path.
+        """Sequentially moves to each relative location specified in path.
         
-        :param list path: List of tuples specifying the coordinates of each relative move.
+        :param path: List of tuples specifying the coordinates of each relative move.
+        :path type: list
         """
         self.drv.followApath(self, path)
 
     def close(self):
+        """Close serial connection.
+        """
         self.drv.close()
 
 

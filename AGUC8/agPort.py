@@ -10,14 +10,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-## Documentation for the AGPort class
-#
-# This class uses the python Serial class to provide functionality for use with the agilis controller commands
+
 class AGPort():
+    """Class that extends the functionality of :class:`Serial` for use with the Agilis controller commands.
+    Creates an instance of :class:`Serial`
+    
+    :param portName: <host>:<port> (See pySerial's serial_for_url documentation. Uses the socket:// URL.)
+    :portName type: str
+    """
     
     ## Class constructor
     # @param portName The name of the virtual serial port of the chosen controller
     def __init__(self,portName = None):
+        """Constructor method
+        """
         
         if portName == None:
             ## @var AGPort.soul
@@ -36,10 +42,22 @@ class AGPort():
     
         
     def amInull(self):
+        """Returns whether port has been successfully opened.
+
+        :return: True if port is open. False if not.
+        :rtype: bool
+        """
         return self.soul is None
     
     
     def isAquery(self,command):
+        """Returns whether command is a query, as defined by Agilis command reference.
+
+        :param command: Command to check
+        :command type: str
+        :return: True if command is a query. False if not.
+        :rtype: bool
+        """
         
         if self.amInull():
             return False
@@ -53,6 +71,14 @@ class AGPort():
     
     
     def sendString(self, command):
+        """Sends a serial command to the device.
+        Returns a response if command is a query. Else returns 0.
+
+        :param command: Command to send
+        :command type: str
+        :return: Return reponse if command is a query. Else returns 0.
+        :rtype: str or int
+        """
         
         response = ''
         logger.debug('sent: ' + repr(command))
@@ -68,6 +94,8 @@ class AGPort():
                 return 0
 
     def close(self):
+        """Close serial connection.
+        """
         logger.debug('Closing serial communication..')
         self.ser.close()
         logger.info('Serial communication with ' + self.url + ' is closed.')

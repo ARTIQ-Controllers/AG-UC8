@@ -19,110 +19,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class AGUC2(object):
-    
-    def __init__(self,portName, axis1alias = 'X', axis2alias = 'Y', stepAmp1 = 50, stepAmp2 = 50):
-        
-        self.port = AGPort(portName)
-        self.axis = {}
-        
-        self.aliases = [axis1alias,axis2alias]
-        
-        self.mThread = MotorThread()
-        
-        if not self.port.amInull():
-            self.port.sendString('MR\n')
-            self.addAxis('1',axis1alias,stepAmp1)
-            self.addAxis('2',axis2alias,stepAmp2)
-        
-        
-    def addAxis(self,name,alias,stepAmp):
-        
-        self.axis[alias] = Axis(name,stepAmp,controller = self)
-    
-    
-    def move(self,d1,d2):
-        
-        self.axis[self.aliases[0]].jog(d1)
-        self.axis[self.aliases[0]].amIstill(100)
-        self.axis[self.aliases[1]].jog(d2)
-        self.axis[self.aliases[1]].amIstill(100)
-        
-    
-    def moveUpUp(self):
-        
-        self.axis[self.aliases[0]].goMax()
-        self.axis[self.aliases[0]].amIstill(RATE)
-        self.axis[self.aliases[1]].goMax()
-        self.axis[self.aliases[1]].amIstill(RATE)
-        
-        
-    def moveDownDown(self):
-        
-        self.axis[self.aliases[0]].goMin()
-        self.axis[self.aliases[0]].amIstill(RATE)
-        self.axis[self.aliases[1]].goMin()
-        self.axis[self.aliases[1]].amIstill(RATE)
-        
-        
-    def moveDownUp(self):
-        
-        self.axis[self.aliases[0]].goMin()
-        self.axis[self.aliases[0]].amIstill(RATE)
-        self.axis[self.aliases[1]].goMax()
-        self.axis[self.aliases[1]].amIstill(RATE)
-        
-        
-    def moveUpDown(self):
-        
-        self.axis[self.aliases[0]].goMax()
-        self.axis[self.aliases[0]].amIstill(RATE)
-        self.axis[self.aliases[1]].goMin()
-        self.axis[self.aliases[1]].amIstill(RATE)
-        
-        
-    def goToZero(self):
-        
-        steps1 = self.axis[self.aliases[0]].queryCounter()
-        steps2 = self.axis[self.aliases[1]].queryCounter()
-        
-        self.axis[self.aliases[0]].jog(-1*steps1)
-        self.axis[self.aliases[0]].amIstill(150)
-        self.axis[self.aliases[1]].jog(-1*steps2)
-        self.axis[self.aliases[1]].amIstill(150)
-        
-    
-    def setZero(self):
-        
-        self.axis[self.aliases[0]].resetCounter()
-        self.axis[self.aliases[1]].resetCounter()
-        
-        
-    def stop(self):
-        
-        if self.mThread.isAlive():
-            self.mThread.stop_at_next_check = True
-            while self.mThread.isAlive():
-                continue
-            self.mThread = MotorThread()
-        self.axis[self.aliases[0]].stop()
-        self.axis[self.aliases[1]].stop()
-        
-    
-    def followApath(self,path):
-        
-        steps = []
-        for p in path:
-            step = lambda: self.move(p[0], p[1])
-            steps.append(step)
-        self.mThread.steps = steps
-        self.mThread.start()
-            
-        
-
 class AGUC8(object):
+    """Class that builds support for Agilis AGUC8 piezo motor controller. Creates an instance of a serial
+    object using :class:`AGPort`
+    
+    :param portName: <host>:<port> (See pySerial's serial_for_url documentation. Uses the socket:// URL.)
+    :portName type: str
+    :param activeChannels: List of active channels on the AGUC8 controller. Defaults to ['1'].
+    :activeChannels type: list, optional
+    :param axis1alias: Alias for Axis 1. Defualts to 'X'.
+    :axis1alias type: str
+    :param axis2alias: Alias for Axis 2. Defualts to 'Y'.
+    :axis2alias type: str
+    :param stepAmp1: Axis 1 step amplitude. See AGUC8 docs. Defaults to 50.
+    :stepAmp1 type: int
+    :param stepAmp2: Axis 2 step amplitude. See AGUC8 docs. Defaults to 50.
+    :stepAmp2 type: int
+    """
     
     def __init__(self,portName,activeChannels = ['1'], axis1alias = 'X', axis2alias = 'Y', stepAmp1 = 50, stepAmp2 = 50):
+        """Constructor method
+        """
         
         self.port = AGPort(portName)
         self.channels = {'1':{axis1alias:None,axis2alias:None},
@@ -148,15 +65,24 @@ class AGUC8(object):
                 logger.info('Channel ' + c + ': ' + axis2alias + ' axis given step amplitude ' + str(stepAmp2))
             logger.info('Changing to channel ' + str(activeChannels[0]))
             self.port.sendString('CC'+str(activeChannels[0])+'\r\n')
+
+            # Does a device have a limit switch?
+            self._limit_status = self.port.sendString('PH\r\n')[2]
+
             logger.debug('Starting motor thread')
             self.mThread = MotorThread()
         
     def close(self):
+        """Close serial connection."""
         self.port.close()
         
     def chchch(self,ch):
-        
-        #CHeck and CHange CHannel
+        """CHeck and CHange CHannel.
+        Changes to channel ch if it isn't already active.
+
+        :param ch: Desired channel number
+        :type ch: str
+        """
         
         channel = int(self.port.sendString('CC?\r\n')[2:])
         if channel != ch:
@@ -165,6 +91,17 @@ class AGUC8(object):
         
         
     def addAxis(self,channel,name,alias,stepAmp):
+        """Assigns an axis to a channel.
+
+        :param channel: Channel number
+        :channel type: str
+        :param name: Axis number
+        :name type: str
+        :param alias: Axis alias
+        :alias type: str
+        :param stepAmp: Axis step amplitude
+        :stepAmp type: int
+        """
         
         if alias not in self.aliases:
             raise KeyError('You used an invalid axis name')
@@ -172,6 +109,15 @@ class AGUC8(object):
     
     
     def move(self,d1,d2,ch='def'):
+        """Relative move.
+
+        :param d1: Axis 1 relative position
+        :d1 type: int
+        :param d2: Axis 2 relative position
+        :d2 type: int
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
@@ -185,58 +131,99 @@ class AGUC8(object):
         
     
     def moveUpUp(self,ch='def'):
-        
+        """Move to Axis 1 maximum, Axis 2 maximum.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
+  
         if ch == 'def':
             ch = ch=self.defChannel
         self.chchch(ch)
-        
-        logger.info('Moving to: ' + self.aliases[0] + ' axis max, ' + self.aliases[1] + ' axis max')
-        self.channels[ch][self.aliases[0]].goMax()
-        self.channels[ch][self.aliases[0]].amIstill(RATE)
-        self.channels[ch][self.aliases[1]].goMax()
-        self.channels[ch][self.aliases[1]].amIstill(RATE)
+
+        if self._limit_status == ch:        
+            logger.info('Moving to: ' + self.aliases[0] + ' axis max, ' + self.aliases[1] + ' axis max')
+            self.channels[ch][self.aliases[0]].goMax()
+            self.channels[ch][self.aliases[0]].amIstill(RATE)
+            self.channels[ch][self.aliases[1]].goMax()
+            self.channels[ch][self.aliases[1]].amIstill(RATE)
+        else:
+            logger.warning('The device on the specified channel has no active limit switch.')
+            return
         
         
     def moveDownDown(self,ch='def'):
+        """Move to Axis 1 minimum, Axis 2 minimum.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
         self.chchch(ch)
-        
-        logger.info('Moving to: ' + self.aliases[0] + ' axis min, ' + self.aliases[1] + ' axis min')
-        self.channels[ch][self.aliases[0]].goMin()
-        self.channels[ch][self.aliases[0]].amIstill(RATE)
-        self.channels[ch][self.aliases[1]].goMin()
-        self.channels[ch][self.aliases[1]].amIstill(RATE)
+
+        if self._limit_status == ch:        
+            logger.info('Moving to: ' + self.aliases[0] + ' axis min, ' + self.aliases[1] + ' axis min')
+            self.channels[ch][self.aliases[0]].goMin()
+            self.channels[ch][self.aliases[0]].amIstill(RATE)
+            self.channels[ch][self.aliases[1]].goMin()
+            self.channels[ch][self.aliases[1]].amIstill(RATE)
+        else:
+            logger.warning('The device on the specified channel has no active limit switch.')
+            return
         
         
     def moveDownUp(self,ch='def'):
+        """Move to Axis 1 minimum, Axis 2 maximum.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
         self.chchch(ch)
-        
-        logger.info('Moving to: ' + self.aliases[0] + ' axis min, ' + self.aliases[1] + ' axis max')
-        self.channels[ch][self.aliases[0]].goMin()
-        self.channels[ch][self.aliases[0]].amIstill(RATE)
-        self.channels[ch][self.aliases[1]].goMax()
-        self.channels[ch][self.aliases[1]].amIstill(RATE)
+
+        if self._limit_status == ch:
+            logger.info('Moving to: ' + self.aliases[0] + ' axis min, ' + self.aliases[1] + ' axis max')
+            self.channels[ch][self.aliases[0]].goMin()
+            self.channels[ch][self.aliases[0]].amIstill(RATE)
+            self.channels[ch][self.aliases[1]].goMax()
+            self.channels[ch][self.aliases[1]].amIstill(RATE)
+        else:
+            logger.warning('The device on the specified channel has no active limit switch.')
+            return
         
         
     def moveUpDown(self,ch='def'):
+        """Move to Axis 1 maximum, Axis 2 minimum.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
         self.chchch(ch)
+        if self._limit_status == ch:
+            logger.info('Moving to: ' + self.aliases[0] + ' axis max, ' + self.aliases[1] + ' axis min')
+            self.channels[ch][self.aliases[0]].goMax()
+            self.channels[ch][self.aliases[0]].amIstill(RATE)
+            self.channels[ch][self.aliases[1]].goMin()
+            self.channels[ch][self.aliases[1]].amIstill(RATE)
+        else:
+            logger.warning('The device on the specified channel has no active limit switch.')
+            return
         
-        logger.info('Moving to: ' + self.aliases[0] + ' axis max, ' + self.aliases[1] + ' axis min')
-        self.channels[ch][self.aliases[0]].goMax()
-        self.channels[ch][self.aliases[0]].amIstill(RATE)
-        self.channels[ch][self.aliases[1]].goMin()
-        self.channels[ch][self.aliases[1]].amIstill(RATE)
-        
-        
+
     def goToZero(self,ch='def'):
+        """Move to the zero position. If zero position hasn't been defined,
+        it will move to the initial position of the device when powered on.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
@@ -254,6 +241,11 @@ class AGUC8(object):
         
     
     def setZero(self,ch='def'):
+        """Set the zero position to the current position.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
@@ -266,6 +258,11 @@ class AGUC8(object):
         
         
     def stop(self,ch='def'):
+        """Stop ongoing motion.
+
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
@@ -283,6 +280,13 @@ class AGUC8(object):
         
     
     def followApath(self,path,ch='def'):
+        """Follow a path.
+
+        :param path: Path to be followed. List of tuples defining relative moves.
+        :path type: list
+        :param ch: Channel number. Defaults to 'def' and uses self.defChannel.
+        :ch type: str, optional
+        """
         
         if ch == 'def':
             ch = ch=self.defChannel
@@ -296,87 +300,3 @@ class AGUC8(object):
             steps.append(step)
         self.mThread.steps = steps
         self.mThread.start()
-        
-        
-class AGP(object):
-    
-    def __init__(self,portName):
-        
-        self.port = AGPort(portName)
-    
-    def moveAbsolute(self,d):
-        
-        self.port.sendString('1PA' + str(d) + '\r\n')
-        
-    def moveRelative(self,d):
-        
-        self.port.sendString('1PR' + str(d) + '\r\n')
-        
-    def stop(self):
-        
-        self.port.sendString('1ST\r\n')
-        
-    def home(self):
-        
-        self.port.sendString('1OR\r\n')
-        
-    def getCurrentPosition(self):
-        
-        return float(self.port.sendString('1TP?\r\n'))
-        
-    def getStatus(self):
-        status = (self.port.sendString('1TS?\r\n'))
-        
-        if (status == '00000A') or (status == '00000B')  or (status == '00000C') or (status == '00000D') or (status == '00000E') or (status == '00000F'):
-            return 0 # not referenced
-        elif (status == '000032') or (status == '000033')  or (status == '000034'): # ready from homing or moving or disabled
-            return 1
-        elif (status == '00001E') or (status == '000028'): # homing or moving
-            return 2
-        elif (status == '00003C') or (status == '00003D'): # error
-            return 3
-        
-class AGAP(object):
-    
-    def __init__(self,portName):
-        
-        self.port = AGPort(portName)
-    
-    def moveAbsolute(self,motionInfo):
-        
-        for axis, pos in motionInfo:
-            if axis == 0:
-                self.port.sendString('1PAU' + str(pos) + '\r\n')
-            elif axis == 1:
-                self.port.sendString('1PAV' + str(pos) + '\r\n')
-            else:
-                pass
-        
-    def moveRelative(self,dU,dV):
-        
-        self.port.sendString('1PRU' + str(dU) + '\r\n')
-        self.port.sendString('1PRV' + str(dV) + '\r\n')
-        
-    def stop(self):
-        
-        self.port.sendString('1ST\r\n')
-                
-    def getCurrentPosition(self):
-        pos = self.port.sendString('1TP?\r\n').split(',')        
-        return (float(pos[0]), float(pos[1]))
-    
-    def getSystemResolution(self):
-        
-        return float(self.port.sendString('1SU?\r\n'))
-        
-    def getStatus(self):
-        status = (self.port.sendString('1TS?\r\n'))
-        
-        if (status == '000014') :
-            return 0 # configuration
-        elif (status == '000032') or (status == '000033')  or (status == '000034')  or (status == '000035')  or (status == '000036'): # ready from homing or moving or disabled
-            return 1
-        elif (status == '000028') or (status == '000029') or (status == '000046'): # homing or moving
-            return 2
-        elif (status == '00003C') or (status == '00003D'): # error
-            return 3
