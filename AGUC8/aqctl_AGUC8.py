@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import sys
 
 from sipyco.pc_rpc import simple_server_loop
 from sipyco import common_args
@@ -16,7 +17,7 @@ class Motor():
     A Motor instance can be initialized using the desired port.
     If no serial number is specified, it connects to the port specified by the "self.port" variable.
 
-    :param port: <host>:<port> (See pySerial's serial_for_url documentation. Uses the socket:// URL.).
+    :param port: Serial port (Uses pySerial serial_for_url)
     Defaults to None if not specified. In that case, it will use self.port.
     :port type: str, optional
     """
@@ -25,7 +26,7 @@ class Motor():
         """Constructor method
         """
         if port is None:
-            self.port = "192.168.1.220:10001"
+            self.port = "socket://192.168.1.220:10001"
         else:
             self.port = port
         self._connect()
@@ -95,7 +96,7 @@ def get_argparser():
     Use this controller to drive the AG-UC8 piezo motor controller.""")
     common_args.simple_network_args(parser, 3251)
     parser.add_argument("-s", "--serialPort", default=None,
-                        help="Serial port. Defaults to None if not used. See documentation.")
+                        help="Serial port. See documentation for how to specify port.")
     common_args.verbosity_args(parser)
     return parser
 
@@ -104,11 +105,15 @@ def main():
     args = get_argparser().parse_args()
     common_args.init_logger_from_args(args)
 
+    if not args.serialPort:
+        print("You need to specify -s")
+        sys.exit(1)
+
     motor = Motor(args.serialPort)
     
     try:
         logger.info("AG-UC8 open. Serving...")
-        simple_server_loop({"motor": motor}, common_args.bind_address_from_args(args), args.port)
+        simple_server_loop({"AGUC8": motor}, common_args.bind_address_from_args(args), args.port)
     finally:
         motor.close()
 

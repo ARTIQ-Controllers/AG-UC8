@@ -15,7 +15,7 @@ class AGPort():
     """Class that extends the functionality of :class:`Serial` for use with the Agilis controller commands.
     Creates an instance of :class:`Serial`
     
-    :param portName: <host>:<port> (See pySerial's serial_for_url documentation. Uses the socket:// URL.)
+    :param portName: Serial port (Uses pySerial serial_for_url)
     :portName type: str
     """
     
@@ -31,10 +31,10 @@ class AGPort():
             return None
         try:
             logger.debug('Opening serial communication..')
-            self.url = "socket://" + portName
-            self.ser = s.serial_for_url(self.url,115200,s.EIGHTBITS,s.PARITY_NONE,s.STOPBITS_ONE, timeout=1)
+            self.portName = portName
+            self.ser = s.serial_for_url(self.portName,115200,s.EIGHTBITS,s.PARITY_NONE,s.STOPBITS_ONE, timeout=1)
             self.soul = 'p'
-            logger.info('Serial communcation opened with ' + self.url)
+            logger.info('Serial communcation opened with ' + self.portName)
         except Exception as e:
             print('I could not find or open the port you specified: {0}'.format(portName))
             self.soul = None
@@ -98,6 +98,6 @@ class AGPort():
         """
         logger.debug('Closing serial communication..')
         self.ser.close()
-        logger.info('Serial communication with ' + self.url + ' is closed.')
+        logger.info('Serial communication with ' + self.portName + ' is closed.')
     
  

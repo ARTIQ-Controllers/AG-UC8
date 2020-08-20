@@ -23,7 +23,7 @@ class AGUC8(object):
     """Class that builds support for Agilis AGUC8 piezo motor controller. Creates an instance of a serial
     object using :class:`AGPort`
     
-    :param portName: <host>:<port> (See pySerial's serial_for_url documentation. Uses the socket:// URL.)
+    :param portName: Serial port (Uses pySerial serial_for_url)
     :portName type: str
     :param activeChannels: List of active channels on the AGUC8 controller. Defaults to ['1'].
     :activeChannels type: list, optional
