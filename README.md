@@ -1,4 +1,4 @@
 # AGUC8
-ARTIQ support for AG-UC8 piezo motor controller.
+ARTIQ support for Newport AG-UC8 piezo motor controller.
 
-https://aguc8.readthedocs.io/en/latest/
+https://aguc8.readthedocs.io
