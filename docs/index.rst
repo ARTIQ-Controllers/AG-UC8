@@ -66,6 +66,8 @@ Acknowledgements
 
 The driver files for the AGUC8 controller were taken from: `https://github.com/dschick/pyagilis <https://github.com/dschick/pyagilis>`_ .
 
+This was adapted from an original respository: `https://github.com/elandini/pyagilis <https://github.com/elandini/pyagilis>`_ .
+
 Indices and tables
 ==================
 
